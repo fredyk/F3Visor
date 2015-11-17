@@ -1,0 +1,12 @@
+Exception in thread Thread-1:
+Traceback (most recent call last):
+  File "C:\Python27\lib\threading.py", line 810, in __bootstrap_inner
+    self.run()
+  File "Z:\dev\python\flib\fredykpm\projects\_3dtests\lib\baselib.py", line 18, in run
+    self.main()
+  File "Z:\dev\python\flib\fredykpm\projects\_3dtests\test.py", line 141, in main
+    self.ObjFromFile("./L200-OBJ/L200-OBJ/L200-OBJ.obj", "blue", rotate = True, name="car",scale=2.0)
+  File "Z:\dev\python\flib\fredykpm\projects\_3dtests\test.py", line 42, in ObjFromFile
+    verts.Controlend( [ float(d)  for d in dt[1:] if d ] )
+AttributeError: 'list' object has no attribute 'Controlend'
+
