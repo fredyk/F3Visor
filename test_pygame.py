@@ -265,15 +265,16 @@ class App(threading.Thread):
 
     def stop(self): self.stopped = True
 
-x, y = -1920, 0
+# x, y = -1920, 0
+x, y = 0, 0
 
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (x,y)
 
 app = App()
-app.ObjFromFile("./Gta-spano-2010 obj/Gta-spano-2010 obj.obj", "blue", rotate = True, name="car",scale=2.0)
-# app.ObjFromFile("./ferrari_599_gtb_obj/ferrari_599gtb.obj", "blue", rotate = True, name="car",scale=2.0)
-# app.ObjFromFile("./black.obj", "blue", rotate = True, name="car",scale=2.0)
-# app.ObjFromFile("./Minecraft Town OBJ/Minecraft Town.obj", "blue", rotate = True, name="car",scale=2.0)
+app.ObjFromFile("./objs/Gta-spano-2010 obj/Gta-spano-2010 obj.obj", "blue", rotate = True, name="car",scale=2.0)
+# app.ObjFromFile("./objs/ferrari_599_gtb_obj/ferrari_599gtb.obj", "blue", rotate = True, name="car",scale=2.0)
+# app.ObjFromFile("./objs/black.obj", "blue", rotate = True, name="car",scale=2.0)
+# app.ObjFromFile("./objs/Minecraft Town OBJ/Minecraft Town.obj", "blue", rotate = True, name="car",scale=2.0)
 step = 1.0 / app.delay
 pygame.init()
 
