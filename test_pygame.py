@@ -1,23 +1,24 @@
-import os, pygame, threading, math
+import os, pygame, threading, math, re, json
 import pygame.gfxdraw
 from _3dlib import *
 from lib.thread import Thread, TkThread, Runner
 from testlib import *
+
 
 class App(threading.Thread):
     # x = 0
     stopped = False
     objs = dict()
     cur_ob = 0
-    delay = 1 / 60.0
+    delay = 1 / 30.0
     available_time = delay
     scale = 10
-    visor =  [5, -10, 5]
+    visor = [0, -10, 5]
     # visor_rot = [0, 0, -math.pi / 4.0]
-    visor_rot = [0, 0, 0.0875]
+    visor_rot = [0, 0, 0.0625]
     visor_disp = [0, 0, 0]
-    rots = [0.032, {0:0, 1:0, 2:0}]
-    movs = [64, {0:0,1:0,2:0}]
+    rots = [0.032, {0: 0, 1: 0, 2: 0}]
+    movs = [64, {0: 0, 1: 0, 2: 0}]
     painted = None
     width = 1920.0
     height = 1080.0
@@ -32,174 +33,125 @@ class App(threading.Thread):
         self.tkthread.start()
 
         print 1
-        # sys.stdout = open("stdout","wb")
-        # sys.stderr = open("stderr","wb")
         self.scale = self.width / 10.0
         self.visor = [s for s in self.scaled(self.visor)]
-        center = ( 5, 1, 5 )
+        center = (5, 1, 5)
         print "scale:", self.scale
 
         sys.stdout.flush()
 
     def scaled(self, v):
-        if(type(v) == list)and(type(v[0])==tuple):
+        if (type(v) == list) and (type(v[0]) == tuple):
             return [
-                tuple( [ c * self.scale for c in ve] )
+                tuple([c * self.scale for c in ve])
                 for ve in v
             ]
         else:
-            return tuple( [c * self.scale for c in v] )
+            return tuple([c * self.scale for c in v])
 
-    def ObjFromFile(self, path, color = "blue", rotate = True, name = "", scale=1.0):
-        ob0file = open(path,"rb")
-        ob0 = Volume([], [], name=name or ("ob"+str(self.cur_ob)), color=color)
+    def ObjFromFile(self, path, color="blue", rotate=True, name="", scale=1.0):
+        ob0file = open(path, "rb")
+        ob0 = Volume([], [], name=name or ("ob" + str(self.cur_ob)), color=color)
         self.objs[ob0.name] = ob0
-        self.cur_ob+=1
+        self.cur_ob += 1
         # scale = 1.0
         verts = []
         for l in ob0file:
             dt = l.strip().split(" ")
             if dt[0] == "v":
-                verts.append( [ float(d)  for d in dt[1:] if d ] )
+                verts.append([float(d) for d in dt[1:] if d])
 
             elif dt[0] == "f":
                 vs = [
                     d.split("/")[0]
                     for d in dt[1:]
                 ]
-                ob0.addFace( tuple( [ int(float(s)) for s in vs ] ) )
+                ob0.addFace(tuple([int(float(s)) for s in vs]))
         min_z = 0
         max_z = 0
         min_y = 0
         max_y = 0
 
         for v in verts:
-            if(v[2] < min_z ):
+            if (v[2] < min_z):
                 min_z = v[2]
-            elif(v[2] > max_z ):
+            elif (v[2] > max_z):
                 max_z = v[2]
-            if(v[1] < min_y ):
+            if (v[1] < min_y):
                 min_y = v[1]
-            elif(v[1] > max_y ):
+            elif (v[1] > max_y):
                 max_y = v[1]
 
-        scale = ( (max_z - min_z) if \
-                ( (max_z - min_z ) > (max_y - min_y) ) else \
-                  (max_y - min_y) ) / 5.0 * 1 / float(scale)
+        scale = ((max_z - min_z) if \
+                     ((max_z - min_z) > (max_y - min_y)) else \
+                     (max_y - min_y)) / 5.0 * 1 / float(scale)
         print ob0.name, scale, min_y, max_y, min_z, max_z
         for v in verts:
-            ob0.addVert( tuple( float(d) / scale + ( 5.0 if i < 2 else 0.0 )
-                         for i, d in enumerate(v) ) )
+            ob0.addVert(tuple(float(d) / scale + (5.0 if i < 2 else 0.0)
+                              for i, d in enumerate(v)))
         ob0file.close()
-        if(rotate):
-            ob0.rotate( [ ( (5, 5, 0), (math.pi / 2.0, 0, 1.0) ), ] )
+        if (rotate):
+            ob0.rotate([((5, 5, 0), (math.pi / 2.0, 0, 1.0)), ])
 
-    # def cube(self, width, position, rotation, color, name):
-    #     cube = Volume([], [], name=name or ("cube"+str(self.cur_ob)), color=color)
-    #     for x in xrange(2):
-    #         for y in xrange(2):
-                
-    #     self.cur_ob += 1
-
-
-    def calculatePoints(self, loop = False):
+    def calculatePoints(self, loop=False):
+        """
+        This method uses app gui main canvas and app cords
+        :param loop: 
+        """
         app = self
         self.painted = set()
         init = now()
         for r in self.rots[1]:
-            if(self.rots[1][r]):
-                self.visor_rot[r] += self.rots[0]*self.rots[1][r]
+            if (self.rots[1][r]):
+                self.visor_rot[r] += self.rots[0] * self.rots[1][r]
 
         for m in self.movs[1]:
-            if(self.movs[1][m]):
-                if(m == 0):
-                    self.visor_disp[m] += self.movs[0]*self.movs[1][m]*math.cos(self.visor_rot[2])
-                elif(m == 1):
-                    self.visor_disp[m] += self.movs[0]*self.movs[1][m]*math.cos(self.visor_rot[2])
+            if (self.movs[1][m]):
+                if (m == 0):
+                    self.visor_disp[m] += self.movs[0] * self.movs[1][m] * math.cos(self.visor_rot[2])
+                elif (m == 1):
+                    self.visor_disp[m] += self.movs[0] * self.movs[1][m] * math.cos(self.visor_rot[2])
                 else:
-                    self.visor_disp[m] += self.movs[0]*self.movs[1][m]
+                    self.visor_disp[m] += self.movs[0] * self.movs[1][m]
 
         for name, obj in app.objs.iteritems():
-            # this method uses app gui main canvas and app cords
             init = now()
-            # try: ch = canvas_height = app.gui.mc.winfo_height()
-            # try: ch = size[1]
-            try: ch = self.height
-            except ValueError as e: print "error 0x01", sys.exc_info()#, [dir(e) for e in sys.exc_info()]
+            try:
+                ch = self.height
+            except ValueError as e:
+                print "error 0x01", sys.exc_info()  # , [dir(e) for e in sys.exc_info()]
             else:
-                # self.points = []
-                # painted = []
-                # painted = dict()
-                # vertex = obj.getVertex()
                 t0 = now()
-                # if self.cords[name] is None:
-                    # self.cords[name] = obj.getCords(app.visor, app.visor_rot, app.visor_disp, app.scale)
                 cords = obj.getCords(app.visor, app.visor_rot, app.visor_disp, app.scale)
-                # else:
-
-                # print "mc:", app.gui.mc.winfo_height()
-                # for face in obj.getFaces():
-                # polygons = obj.getPolygons()
-                # if ( now() - init ) >= self.available_time/2.0: break
-                # cnt = self.last_paint
                 cnt = 0
                 while len(self.points) < cnt:
-                    # self.points.append([(0, 0), (0, 0), (0, 0)])
                     self.points.append(None)
-                # for pol in polygons[cnt:]:
                 for pol in obj.getPolygons(cnt):
-                    # if ( now() - init ) >= self.available_time/2.0: break
-                    # face = [app.cords[n-1] for n in face]
-                    if(not(app.stopped) ):#and (len(face)==4)):
-                        # try: app.gui.mc.create_polygon([ cords[f-1] for f in face ], fill=obj.color, width=2, tags=obj.name) # paints in app gui main canvas
-                        # except (ValueError, TclError) as e: print "error 0x02", sys.exc_info()#, [dir(e) for e in sys.exc_info()]
+                    if (not (app.stopped)):  # and (len(face)==4)):
                         face = pol.getFace()
                         ps = []
                         for i, n in enumerate(face):
-                            if(not(app.stopped)):
-                                # if i == 0:
-                                #     prev = -1
-                                # else:
-                                #     prev = i - 1
-                                # # px, py = app.cords[face[prev]-1][0], app.gui.mc.winfo_height()-app.cords[face[prev]-1][1]
-                                # px, py = cords[face[prev]-1][0], \
-                                #          ch-cords[face[prev]-1][1]
-                                # cx, cy = cords[n-1][0], \
-                                #          ch-cords[n-1][1]
-                                # paint = sorted([(px, py,), (cx, cy,)])
-                                # if i == 0:
-                                #     prev = -1
-                                # else:
-                                #     prev = i - 1
-                                # px, py = app.cords[face[prev]-1][0], app.gui.mc.winfo_height()-app.cords[face[prev]-1][1]
-                                # if(i < len(face) - 1):
-                                px, py = cords[n-1][0], \
-                                         ch-cords[n-1][1]
-                                # cx, cy = cords[n-1][0], \
-                                #          ch-cords[n-1][1]
-                                # paint = sorted([(px, py,), (cx, cy,)])
+                            if (not (app.stopped)):
+                                px, py = cords[n - 1][0], \
+                                         ch - cords[n - 1][1]
                                 paint = (px, py,)
-                                # points.append(paint)
                                 ps.append(paint)
-                            else: break
-                        # points.append(ps)
+                            else:
+                                break
                         pol.setPaint(ps)
-                        if([True for i, p in enumerate(ps[1:]) if p[0] != ps[i][0]]) and \
-                          ([True for i, p in enumerate(ps[1:]) if p[1] != ps[i][1]]):
-                            if(cnt >= len(self.points)):
+                        if ([True for i, p in enumerate(ps[1:]) if p[0] != ps[i][0]]) and \
+                                ([True for i, p in enumerate(ps[1:]) if p[1] != ps[i][1]]):
+                            if (cnt >= len(self.points)):
                                 self.points.append(pol)
-                            elif(self.points[cnt] is None):
+                            elif (self.points[cnt] is None):
                                 print "was None"
                                 self.points[cnt] = pol
                         cnt += 1
-                    else: break
+                    else:
+                        break
                 t1 = now()
-                print len(cords) / float( (t1 - t0) or 1e-6 ), "cords/s"
 
-                # for paint in points:
-                # for pol in points[:16]:
-        print "calc time:",now()-init
-        if(loop):
+        if (loop):
             while not self.stopped:
                 self.calculatePoints()
 
@@ -207,8 +159,6 @@ class App(threading.Thread):
         app = self
         init = now()
         size = len(self.points)
-        # for i, pol in enumerate(self.points):
-        # for pol in self.points[self.last_paint:]:
         self.painted = set()
         for pol in self.points:
             if pol is None: print "is None"; continue
@@ -216,24 +166,8 @@ class App(threading.Thread):
             paint = list(pol.getPaint())
             obj = pol.getObj()
 
-            if ( not (str(paint) in self.painted)):#and(i >= obj.last_paint):
-                # canvas.create_line(px, py, cx, cy, fill="red")
-                # try: app.gui.mc.create_line(*paint, fill=obj.color, width=2, tags=obj.name) # paints in app gui main canvas
+            if (not (str(paint) in self.painted)):  # and(i >= obj.last_paint):
                 try:
-                    # print paint
-                    # app.gui.mc.create_polygon(*paint, outline=obj.color,fill="", width=2, tags=obj.name) # paints in app gui main canvas
-                    # app.tkthread.after_gui( app.gui.mc.create_polygon, *paint, outline=obj.color,fill="", width=2, tags=obj.name ) # paints in app gui main canvas
-                    # app.tkthread.after_idle( app.gui.mc.create_polygon, *tuple(paint.list()), outline=obj.color,fill="", width=2, tags=obj.name ) # paints in app gui main canvas
-                    # app.gui.mc.delete(pol.getCode())
-                    # app.tkthread.after_idle( app.gui.mc.delete, pol.getCode() )
-                    # app.tkthread.after_idle( pol.setCode, app.gui.mc.create_polygon, *paint, outline=obj.color,fill="", width=2, tags=obj.name ) # paints in app gui main canvas
-                            # app.gui.mc.delete,
-                    # app.tkthread.after_idle(
-                    #     app.tkthread.nestedRun,
-                        # [
-                    # pol.setCode,
-                            # ],
-                        # BLUE,
                     pygame.gfxdraw.filled_polygon(
                         screen,
                         paint,
@@ -244,57 +178,122 @@ class App(threading.Thread):
                         paint,
                         (0, 0, 255),
                     )
-                        # [(100, 100),(100, 200),(200, 100)],
-                    # pygame.draw.polygon(screen, BLUE, paint, 1)
-                    self.last_paint += 1 if ( self.last_paint < (size - 1) ) else -size
+                    self.last_paint += 1 if (self.last_paint < (size - 1)) else -size
                 except (ValueError, TclError) as e:
 
-                    print "error 0x02", sys.exc_info()#, [dir(e) for e in sys.exc_info()]
+                    print "error 0x02", sys.exc_info()  # , [dir(e) for e in sys.exc_info()]
                     pass
                 else:
-                    # painted.append(paint)
                     self.painted.add(str(paint))
-        # self.painted = None
-        print "paint time:",now()-init
-        if(loop):
+        if (loop):
             while not self.stopped:
                 self.paintPolygons(screen)
-                # pass
         else:
             return (now() - init) or 1e-6
 
-    def stop(self): self.stopped = True
+    def stop(self):
+        self.tkthread.stop()
+        self.stopped = True
 
-# x, y = -1920, 0
+
 x, y = 0, 0
 
-os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (x,y)
+os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (x, y)
 
 app = App()
-app.ObjFromFile("./objs/Gta-spano-2010 obj/Gta-spano-2010 obj.obj", "blue", rotate = True, name="car",scale=2.0)
-# app.ObjFromFile("./objs/ferrari_599_gtb_obj/ferrari_599gtb.obj", "blue", rotate = True, name="car",scale=2.0)
-# app.ObjFromFile("./objs/black.obj", "blue", rotate = True, name="car",scale=2.0)
-# app.ObjFromFile("./objs/Minecraft Town OBJ/Minecraft Town.obj", "blue", rotate = True, name="car",scale=2.0)
+app.ObjFromFile("./objs/Gta-spano-2010 obj/Gta-spano-2010 obj.obj", "blue", rotate=True, name="car", scale=2.0)
 step = 1.0 / app.delay
 pygame.init()
 
-BLACK    = (   0,   0,   0)
-WHITE    = ( 255, 255, 255)
-BLUE     = (   0,   0, 255)
-GREEN    = (   0, 255,   0)
-RED      = ( 255,   0,   0)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
 
 PI = 3.141592653
 
-# size = (1920, 1080)
-# app.width, app.height = 1280, 1024
 app.width, app.height = 1920, 1080
-# app.width, app.height = 585, 1040
 size = (app.width, app.height)
+
+texts = []
+colors = {
+    "white": (255, 255, 255),
+    "black": (0, 0, 0),
+    "red": (255, 0, 0),
+    "green": (0, 255, 0),
+    "blue": (0, 0, 255),
+    "cyan": (0, 255, 255),
+    "magenta": (255, 0, 255),
+    "yellow": (255, 255, 0),
+    "orange": (2)
+}
+values = [0, 127, 255]
+y = 40
+
+keys = ["text", "x", "y", "color", "font", "size", "bold", "italic"]
+patt = r"(\s*rgb\s*\(\s*)" + \
+       r"([0-9]?[0-9]?[0-9])" + \
+       r"(\s*\,\s*)" + \
+       r"([0-9]?[0-9]?[0-9])" + \
+       r"(\s*\,\s*)" + \
+       r"([0-9]?[0-9]?[0-9])(\s*\)\s*)"
+for fn in os.listdir("./"):
+    if os.path.splitext(fn)[1].lower() in [".gui"] and os.path.isfile(fn):
+        ftexts = open(fn, "rb").read().split("\n\n")
+        for t in ftexts:
+            text = dict()
+            lines = t.splitlines()
+            for l in lines:
+                key = l.split(":")[0].strip().lower()
+                value = "".join(l.split(":")[1:]).strip()
+                print key, value
+                if key in keys:
+                    if key == "color":
+                        r = re.search(patt, value)
+                        if r and r.group(2) and r.group(4) and r.group(6):
+                            # print r.groups()
+                            try:
+                                r, g, b = (int(r.group(x)) for x in [2, 4, 6])
+                            except Exception as e:
+                                print e
+                            else:
+                                print "rgb: ", r, g, b
+                                text["color"] = (r, g, b)
+                    elif key in ["x", "y", "size"]:
+                        try:
+                            text[key] = int(value)
+                        except Exception as e:
+                            print e
+                    elif key in ["bold", "italic"]:
+                        value = value.lower()
+                        text[key] = True if value in ["true", "1", "yes"] else False
+                    else:
+                        text[key] = value
+            if text:
+                texts.append(text)
+defaults = {
+    "text": "",
+    "x": 10,
+    "y": 10,
+    "color": (255, 255, 255),
+    "font": "Calibri",
+    "size": 18,
+    "bold": False,
+    "italic": False
+}
+
+for t in texts:
+    for d in defaults:
+        if not d in t:
+            t[d] = defaults[d]
+
+with open("texts.json", "wb") as f:
+    f.write(json.dumps(texts, indent=4, separators=(",", ":")))
+
 screen = pygame.display.set_mode(size)
-# screen = pygame.display.set_mode(pygame.FULLSCREEN)
 if os.name == "posix":
-    pygame.display.toggle_fullscreen()  
+    pygame.display.toggle_fullscreen()
 
 pygame.display.set_caption("3D Visor")
 
@@ -303,66 +302,60 @@ clock = pygame.time.Clock()
 cnt = 0
 cnt2 = 0
 init = now()
+target_fps = 1.0 / app.delay
+fps = target_fps
 
-Runner( callback=app.calculatePoints, args=(True,)).start()
-# Runner( callback=app.paintPolygons, args=(screen,True)).start()
+Runner(callback=app.calculatePoints, args=(True,)).start()
 
 while not done:
 
-    for event in pygame.event.get(): # User did something
-        if event.type == pygame.QUIT: # If user clicked close
-            done = True # Flag that we are done so we exit this loop
+    for event in pygame.event.get():  # User did something
+        if event.type == pygame.QUIT:  # If user clicked close
+            done = True  # Flag that we are done so we exit this loop
 
-        # if(e.keysym == "Left"): # left
-
-        #     self.rots[1][2] = -1
-
-        # elif(e.keysym == "Up"): # up
-
-        #     self.rots[1][0] = 1
-
-        # elif(e.keysym == "Right"): # right
-
-        #     self.rots[1][2] = 1
-
-        # elif(e.keysym == "Down"): # down
-
-        #     self.rots[1][0] = -1
         elif event.type == pygame.KEYDOWN:
-            # Figure out if it was an arrow key. If so
-            # adjust speed.
+            """
+            Figure out if it was an arrow key. If so
+            adjust speed.
+            """
             if event.key == pygame.K_ESCAPE:
                 done = True
+
             elif event.key == pygame.K_LEFT:
                 app.rots[1][2] = -1
+
             elif event.key == pygame.K_RIGHT:
                 app.rots[1][2] = 1
+
             elif event.key == pygame.K_UP:
                 app.rots[1][0] = 1
+
             elif event.key == pygame.K_DOWN:
                 app.rots[1][0] = -1
-            elif(event.key == pygame.K_a):
 
+            elif event.key == pygame.K_a:
                 app.movs[1][0] = 1
-            elif(event.key == pygame.K_w):
 
+            elif event.key == pygame.K_w:
                 app.movs[1][1] = -1
-            elif(event.key == pygame.K_d):
 
+            elif event.key == pygame.K_d:
                 app.movs[1][0] = -1
-            elif(event.key == pygame.K_s):
 
+            elif event.key == pygame.K_s:
                 app.movs[1][1] = 1
-            elif(event.key == pygame.K_e):
 
+            elif event.key == pygame.K_e:
                 app.movs[1][2] = -1
-            elif(event.key == pygame.K_c):
 
+            elif event.key == pygame.K_c:
                 app.movs[1][2] = 1
 
-        # User let up on a key
         elif event.type == pygame.KEYUP:
-            # If it is an arrow key, reset vector back to zero
+            """
+            User let up on a key
+            If it is an arrow key, reset vector back to zero
+            """
             if event.key == pygame.K_LEFT:
                 app.rots[1][2] = 0
             elif event.key == pygame.K_RIGHT:
@@ -371,114 +364,81 @@ while not done:
                 app.rots[1][0] = 0
             elif event.key == pygame.K_DOWN:
                 app.rots[1][0] = 0
-            elif(event.key == pygame.K_a):
-
+            elif event.key == pygame.K_a:
                 app.movs[1][0] = 0
-            elif(event.key == pygame.K_w):
-
+            elif event.key == pygame.K_w:
                 app.movs[1][1] = 0
-            elif(event.key == pygame.K_d):
-
+            elif event.key == pygame.K_d:
                 app.movs[1][0] = 0
-            elif(event.key == pygame.K_s):
-
+            elif event.key == pygame.K_s:
                 app.movs[1][1] = 0
-            elif(event.key == pygame.K_e):
-
+            elif event.key == pygame.K_e:
                 app.movs[1][2] = 0
-            elif(event.key == pygame.K_c):
-
+            elif event.key == pygame.K_c:
                 app.movs[1][2] = 0
-    
 
-    # pygame.draw.polygon(screen, BLUE,
-    #     c3dto2d([
-    #         (1000, 1000, 1000),
-    #         (100, 1000, 2000),
-    #         (2000, 3000, 1000)
-    #         ]),
-    #     1)
-    # app.tkthread.after_idle(
-    #         app.objs["car"].rotate,
-    #         [
-    #             (
-    #                 (5.0, 5.0, 0),
-    #                 ( 
-    #                     0,
-    #                     0,
-    #                     2.0*math.pi / step
-    #                     )
-    #                 )
-    #             ]
-    #     )
-    # app.tkthread.after_idle(
-
-    #         app.calculatePoints
-    #     )
-    # # screen.fill(BLACK)
-    # app.tkthread.after_idle(
-    #     screen.fill,BLACK
-    #     )
-    # app.tkthread.after_idle(
-    #     app.paintPolygons,
-    #     screen
-    #     )
-
-    # app.tkthread.after_idle(
-    #     pygame.display.flip
-    #     )
     t0 = 0
-    # t0 = app.objs["car"].rotate(
     app.tkthread.after_idle(
         app.objs["car"].rotate,
         [
             (
                 (5.0, 5.0, 0),
                 (
-                    0, 0, 2.0*math.pi / step / 60.0
-                    )
+                    0, 0, 2.0 * math.pi / step / max(target_fps, fps)
                 )
-            ]
-        )
-    # app.calculatePoints()
-    screen.fill(BLACK)
-    # screen.fill("#777777")
-    screen.lock()
-    t1 = app.paintPolygons(screen)
-    screen.unlock()
-    # pygame.display.flip()
+            )
+        ]
+    )
+    _paint = False
+    if fps >= target_fps:
+        _paint = True
+    if _paint:
+        print "PAINT"
+        screen.fill(BLACK)
+        screen.lock()
+        t1 = app.paintPolygons(screen)
+        screen.unlock()
 
-    # self.gui.sl.config(text="fps: " + str(round(cnt2 / (max((now() - init), 1)), 1)))
     cnt += 1
     cnt2 += 1
-    if(not(cnt % 600)):
+    if not (cnt % 600):
         cnt2 = 0
         init = now()
 
-    # Select the font to use, size, bold, italics
-    font = pygame.font.SysFont('Calibri', 25, False, False)
+    if _paint:
+        """Select the font to use, size, bold, italics"""
+        font = pygame.font.SysFont('Calibri', 25, False, False)
 
-    # Render the text. "True" means anti-aliased text. 
-    # Black is the color. This creates an image of the 
-    # letters, but does not put it on the screen
-    # text = font.render("My text", True, BLACK)
-    # text = font.render("fps: " + str(round(cnt2 / (max((now() - init), 1)), 1)), True, (255, 127, 63))
-    text = font.render("fps: {:1.1f}".format(cnt2 / max(1e-3, float(now() - init) ) ), True, (255, 127, 63) )
+        """
+        Render the text. "True" means anti-aliased text. 
+        Black is the color. This creates an image of the 
+        letters, but does not put it on the screen
+        """
+        text = font.render(
+            "fps: {:1.1f} Camera rotation: {:s} Camera position: {:s} / {:s}".format(fps, str(app.visor_rot),
+                                                                                     str(app.visor),
+                                                                                     str(app.visor_disp)), True,
+            (255, 127, 63))
 
-    # Put the image of the text on the screen at 250x250
-    # screen.blit(text, [10, 10])
+        """Put the image of the text on the screen at 10x10"""
+        for t in texts:
+            text_surface = pygame.font.SysFont(t["font"], t["size"], t["bold"], t["italic"]) \
+                .render(t["text"], True, t["color"])
+            size = text_surface.get_size()
+            x, y = t["x"], t["y"]
+            screen.blit(text_surface, [
+                x if x > 0 else app.width + x - size[0],
+                y if y > 0 else app.height + y - size[1]]
+                        )
+        screen.blit(text, [10, 10])
 
-
-
-    # clock.tick(60.0)
-    # clock.tick(30.0)
-    # clock.tick(15.0)
-    # fps = min(1.0 / app.delay - 1.0 / (t0 + t1), 1.0 / app.delay)
     t = t0 + t1
-    fps = 1.0 / t
-    print "fps:", fps, {"t0":t0, "t1":t1}
+    fps = cnt2 / max(1e-3, float(now() - init))
     pygame.display.flip()
-    # clock.tick(fps)
+    nfps = min(fps, fps ** 2 / float(target_fps * 1.01))
+    print "fps", fps, "nfps", nfps
+    if nfps >= target_fps:
+        clock.tick(nfps)
 
 app.stop()
 pygame.quit()

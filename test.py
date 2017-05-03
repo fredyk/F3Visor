@@ -157,7 +157,7 @@ class Control(BaseControl):
         
         # self.ObjFromFile("./MinoanColumnA_OBJ/MinoanColumnA_Low.obj", color="yellow", name="column")
         # self.ObjFromFile("./palm/palm1_LOD.obj", "green", rotate = True, name="palm")
-        self.ObjFromFile("./Gta-spano-2010 obj/Gta-spano-2010 obj.obj", "blue", rotate = True, name="car",scale=2.0)
+        self.ObjFromFile("./objs/Gta-spano-2010 obj/Gta-spano-2010 obj.obj", "blue", rotate = True, name="car",scale=2.0)
         # self.ObjFromFile("./L200-OBJ/L200-OBJ/L200-OBJ.obj", "blue", rotate = True, name="car",scale=1.0)
         self.objs["cube0"] = cube
         self.objs["pyr0"] = pyramid

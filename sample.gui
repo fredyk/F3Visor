@@ -1,0 +1,255 @@
+text:FPS: {{ fps }}
+color:rgb(0,255,255)
+x:-10
+y:10
+size:9
+
+text: File name: {{ file_name }}
+color: rgb ( 255 , 127 , 63 )
+x: -10
+y: 20
+font: Lucida Console
+
+text: (0, 0, 0)
+x: -10
+y: 40
+color: rgb(0, 0, 0)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (0, 0, 127)
+x: -10
+y: 60
+color: rgb(0, 0, 127)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (0, 0, 255)
+x: -10
+y: 80
+color: rgb(0, 0, 255)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (0, 127, 0)
+x: -10
+y: 100
+color: rgb(0, 127, 0)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (0, 127, 127)
+x: -10
+y: 120
+color: rgb(0, 127, 127)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (0, 127, 255)
+x: -10
+y: 140
+color: rgb(0, 127, 255)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (0, 255, 0)
+x: -10
+y: 160
+color: rgb(0, 255, 0)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (0, 255, 127)
+x: -10
+y: 180
+color: rgb(0, 255, 127)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (0, 255, 255)
+x: -10
+y: 200
+color: rgb(0, 255, 255)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (127, 0, 0)
+x: -10
+y: 220
+color: rgb(127, 0, 0)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (127, 0, 127)
+x: -10
+y: 240
+color: rgb(127, 0, 127)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (127, 0, 255)
+x: -10
+y: 260
+color: rgb(127, 0, 255)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (127, 127, 0)
+x: -10
+y: 280
+color: rgb(127, 127, 0)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (127, 127, 127)
+x: -10
+y: 300
+color: rgb(127, 127, 127)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (127, 127, 255)
+x: -10
+y: 320
+color: rgb(127, 127, 255)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (127, 255, 0)
+x: -10
+y: 340
+color: rgb(127, 255, 0)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (127, 255, 127)
+x: -10
+y: 360
+color: rgb(127, 255, 127)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (127, 255, 255)
+x: -10
+y: 380
+color: rgb(127, 255, 255)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (255, 0, 0)
+x: -10
+y: 400
+color: rgb(255, 0, 0)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (255, 0, 127)
+x: -10
+y: 420
+color: rgb(255, 0, 127)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (255, 0, 255)
+x: -10
+y: 440
+color: rgb(255, 0, 255)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (255, 127, 0)
+x: -10
+y: 460
+color: rgb(255, 127, 0)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (255, 127, 127)
+x: -10
+y: 480
+color: rgb(255, 127, 127)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (255, 127, 255)
+x: -10
+y: 500
+color: rgb(255, 127, 255)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (255, 255, 0)
+x: -10
+y: 520
+color: rgb(255, 255, 0)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (255, 255, 127)
+x: -10
+y: 540
+color: rgb(255, 255, 127)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
+text: (255, 255, 255)
+x: -10
+y: 560
+color: rgb(255, 255, 255)
+font: Calibri
+size: 18
+bold: false
+italic: false
+
